@@ -1,8 +1,7 @@
 const axios = require('axios');
-const { TwitterApi } = require('twitter-api-v2');
 
 function createTwitterClient(config, logger) {
-  const client = axios.create({
+  const readClient = axios.create({
     baseURL: config.twitter.baseUrl,
     timeout: 10000,
     headers: {
@@ -10,16 +9,16 @@ function createTwitterClient(config, logger) {
     }
   });
 
-  let readWriteUser = null;
-  if (config.twitter.oauth1) {
-    const userClient = new TwitterApi({
-      appKey: config.twitter.oauth1.appKey,
-      appSecret: config.twitter.oauth1.appSecret,
-      accessToken: config.twitter.oauth1.accessToken,
-      accessSecret: config.twitter.oauth1.accessSecret
+  let postClient = null;
+  if (config.twitter.oauth2User?.accessToken) {
+    postClient = axios.create({
+      baseURL: config.twitter.baseUrl,
+      timeout: 10000,
+      headers: {
+        Authorization: `Bearer ${config.twitter.oauth2User.accessToken}`
+      }
     });
-    readWriteUser = userClient.readWrite;
-    logger.debug('TWITTER', 'OAuth 1.0a user client initialized for posting');
+    logger.debug('TWITTER', 'OAuth 2.0 user access token initialized for posting');
   }
 
   async function fetchRecentTweets(account) {
@@ -35,7 +34,7 @@ function createTwitterClient(config, logger) {
 
     const query = terms.join(' ');
 
-    const response = await client.get('/tweets/search/recent', {
+    const response = await readClient.get('/tweets/search/recent', {
       params: {
         query,
         max_results: 10,
@@ -48,23 +47,35 @@ function createTwitterClient(config, logger) {
     return tweets;
   }
 
-  async function postReply(tweetId, text) {
-    if (!readWriteUser) {
+  async function verifyPostAuth() {
+    if (!postClient) {
       throw new Error(
-        'Twitter post requires OAuth 1.0a user credentials. Set TWITTER_API_KEY, TWITTER_API_SECRET, TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET (and use DRY_RUN=false only when they are set).'
+        'Twitter post requires OAuth 2.0 user access token. Set TWITTER_OAUTH2_ACCESS_TOKEN (and use DRY_RUN=false only when set).'
       );
     }
 
-    const result = await readWriteUser.v2.tweet({
+    const response = await postClient.get('/users/me');
+    return response.data?.data || null;
+  }
+
+  async function postReply(tweetId, text) {
+    if (!postClient) {
+      throw new Error(
+        'Twitter post requires OAuth 2.0 user access token. Set TWITTER_OAUTH2_ACCESS_TOKEN (and use DRY_RUN=false only when set).'
+      );
+    }
+
+    const response = await postClient.post('/tweets', {
       text,
       reply: { in_reply_to_tweet_id: tweetId }
     });
 
-    return result.data;
+    return response.data?.data;
   }
 
   return {
     fetchRecentTweets,
+    verifyPostAuth,
     postReply
   };
 }

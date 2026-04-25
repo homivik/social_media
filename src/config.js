@@ -61,10 +61,7 @@ function loadConfig() {
   const dryRun = parseBoolean(process.env.DRY_RUN, false);
 
   if (!dryRun) {
-    assertRequired('TWITTER_API_KEY');
-    assertRequired('TWITTER_API_SECRET');
-    assertRequired('TWITTER_ACCESS_TOKEN');
-    assertRequired('TWITTER_ACCESS_TOKEN_SECRET');
+    assertRequired('TWITTER_OAUTH2_ACCESS_TOKEN');
   }
 
   const logLevel = String(process.env.LOG_LEVEL || 'INFO').toUpperCase();
@@ -77,13 +74,10 @@ function loadConfig() {
     twitter: {
       bearerToken: process.env.TWITTER_BEARER_TOKEN,
       baseUrl: 'https://api.twitter.com/2',
-      oauth1: dryRun
+      oauth2User: dryRun
         ? null
         : {
-            appKey: process.env.TWITTER_API_KEY,
-            appSecret: process.env.TWITTER_API_SECRET,
-            accessToken: process.env.TWITTER_ACCESS_TOKEN,
-            accessSecret: process.env.TWITTER_ACCESS_TOKEN_SECRET
+            accessToken: process.env.TWITTER_OAUTH2_ACCESS_TOKEN
           }
     },
     openRouter: {

@@ -38,6 +38,7 @@ function createOpenRouterClient(config, logger) {
   async function generateReply(tweetText, replyStyle) {
     const systemPrompt = [
       `You are a Twitter engagement assistant with a ${replyStyle.tone} tone.`,
+      'Always write the final reply in natural Japanese.',
       `Max reply length: ${replyStyle.maxLength} characters.`,
       replyStyle.includeEmoji ? 'Use emoji only if natural.' : 'Do not include emojis.',
       replyStyle.askQuestions ? 'Prefer ending with a thoughtful question.' : 'Do not force a question.',

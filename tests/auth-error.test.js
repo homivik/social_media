@@ -17,7 +17,30 @@ test('detects unsupported-authentication 403 from Twitter', () => {
   );
 });
 
+test('detects unauthorized 401 as auth config error', () => {
+  assert.equal(
+    isTwitterPostAuthConfigError({
+      code: 401,
+      data: { title: 'Unauthorized', detail: 'Unauthorized' }
+    }),
+    true
+  );
+});
+
+test('detects oauth1 permission 403 as auth config error', () => {
+  assert.equal(
+    isTwitterPostAuthConfigError({
+      code: 403,
+      data: {
+        type: 'https://api.twitter.com/2/problems/oauth1-permissions',
+        detail: 'Your client app is not configured with the appropriate oauth1 app permissions for this endpoint.'
+      }
+    }),
+    true
+  );
+});
+
 test('ignores unrelated errors', () => {
-  assert.equal(isTwitterPostAuthConfigError({ code: 401 }), false);
+  assert.equal(isTwitterPostAuthConfigError({ code: 500 }), false);
   assert.equal(isTwitterPostAuthConfigError({ code: 403, data: { detail: 'Something else' } }), false);
 });

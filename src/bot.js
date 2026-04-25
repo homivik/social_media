@@ -27,12 +27,19 @@ function previewText(text, maxLen = TEXT_PREVIEW_LEN) {
 function isTwitterPostAuthConfigError(error) {
   const status = error?.code ?? error?.response?.status;
   const data = error?.data ?? error?.response?.data;
-  if (status !== 403) {
+  if (status !== 401 && status !== 403) {
     return false;
   }
   const type = String(data?.type || '');
   const detail = String(data?.detail || '');
-  return type.includes('unsupported-authentication') || detail.includes('Application-Only');
+  return (
+    status === 401 ||
+    type.includes('unsupported-authentication') ||
+    type.includes('oauth1-permissions') ||
+    detail.includes('Application-Only') ||
+    detail.includes('oauth1 app permissions') ||
+    detail.includes('Unauthorized')
+  );
 }
 
 function sortTweetsNewestFirst(tweets) {
@@ -153,6 +160,27 @@ async function run() {
       accounts: config.accountsToMonitor.length,
       dryRun: config.dryRun
     });
+
+    if (!config.dryRun) {
+      try {
+        const user = await twitterClient.verifyPostAuth();
+        logger.info('POST', 'Twitter posting auth preflight succeeded', {
+          stage: 'POST',
+          userId: user?.id,
+          username: user?.username
+        });
+      } catch (error) {
+        const status = error?.code ?? error?.response?.status;
+        const body = error?.data ?? error?.response?.data;
+        logger.error('POST', 'Twitter posting auth preflight failed', {
+          stage: 'POST',
+          status,
+          body,
+          message: error.message
+        });
+        throw new Error('Posting auth preflight failed. Fix Twitter OAuth credentials before rerunning.');
+      }
+    }
 
     for (const account of config.accountsToMonitor) {
       let tweets = [];
@@ -344,7 +372,7 @@ async function run() {
           if (isTwitterPostAuthConfigError(error)) {
             logger.error(
               'POST',
-              'Twitter rejected credentials (use OAuth 1.0a user access token + secret for posting). Stopping further posts this run.',
+              'Twitter rejected credentials. Stopping further posts this run.',
               { stage: 'POST' }
             );
             break;

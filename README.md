@@ -25,20 +25,17 @@ Node.js bot that monitors configured Twitter accounts, generates contextual repl
 
 ### Posting to Twitter (live mode)
 
-`POST /2/tweets` requires **OAuth 1.0a user context** (the account that will send replies). When **`DRY_RUN=false`**, you must set:
+`POST /2/tweets` requires **OAuth 2.0 user context** (the account that will send replies). When **`DRY_RUN=false`**, you must set:
 
-- `TWITTER_API_KEY` — Consumer Key from the developer app
-- `TWITTER_API_SECRET` — Consumer Secret
-- `TWITTER_ACCESS_TOKEN` — User Access Token for the posting account
-- `TWITTER_ACCESS_TOKEN_SECRET` — User Access Token Secret
+- `TWITTER_OAUTH2_ACCESS_TOKEN` — OAuth 2.0 Access Token generated for your posting user
 
-Create these in the [X Developer Portal](https://developer.x.com/) under your app (User authentication settings → OAuth 1.0a, then generate access token for the user).
+Generate this token in [X Developer Portal](https://developer.x.com/) under your app credentials (OAuth 2.0 Keys -> Generate access token for your own account). Scope must include at least `tweet.write` and `tweet.read`.
 
 ## Run locally
 
 - Dry run (search + generate only; OAuth keys not required):
   - `DRY_RUN=true npm run bot`
-- Live posting (search with Bearer, **post** with OAuth 1.0a):
+- Live posting (search with Bearer, **post** with OAuth 2.0 user token):
   - `DRY_RUN=false npm run bot`
 
 ## Workflow
@@ -65,7 +62,7 @@ Set repository secrets:
 
 - `TWITTER_BEARER_TOKEN`
 - `OPENROUTER_API_KEY`
-- For live posting: `TWITTER_API_KEY`, `TWITTER_API_SECRET`, `TWITTER_ACCESS_TOKEN`, `TWITTER_ACCESS_TOKEN_SECRET`
+- For live posting: `TWITTER_OAUTH2_ACCESS_TOKEN`
 - Optional config secrets (`CONFIG_ACCOUNTS`, `CONFIG_MIN_ENGAGEMENT`, etc.)
 
 Then push to default branch; job runs every 15 minutes and supports manual trigger.
