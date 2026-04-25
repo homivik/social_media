@@ -1,0 +1,7 @@
+node_modules/
+.env
+.env.local
+bot.log
+data/*.sqlite
+coverage/
+.DS_Store
